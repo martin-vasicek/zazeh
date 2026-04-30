@@ -601,3 +601,88 @@ body.noMask #description {
 #dropMenu > div:hover {
 	text-decoration: underline;
 }
+
+/* ==========================================
+   Custom modifications (zazeh-test)
+   ========================================== */
+
+/* Button color classes for different action types */
+
+div.button.btn-combat {
+	border-color: #8B0000;
+	color: #8B0000;
+}
+
+div.button.btn-combat:hover {
+	background-color: #fff0f0;
+}
+
+div.button.btn-combat div.cooldown {
+	background-color: #ffd0d0;
+}
+
+div.button.btn-heal {
+	border-color: #006400;
+	color: #006400;
+}
+
+div.button.btn-heal:hover {
+	background-color: #f0fff0;
+}
+
+div.button.btn-heal div.cooldown {
+	background-color: #ccffcc;
+}
+
+/* Auto-dismiss button: animated reverse countdown bar */
+
+div.button.btn-autodismiss {
+	border-style: dashed;
+}
+
+div.button.btn-autodismiss div.autodismiss-bar {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: -1;
+	height: 100%;
+	background-color: #e0e0e0;
+}
+
+/* Calendar display in header */
+
+div#calendar_display {
+	display: inline-block;
+	font-size: 14px;
+	color: #666;
+	float: right;
+	line-height: 20px;
+	padding-right: 5px;
+}
+
+/* Single hut challenge indicator */
+
+div#challenge_display {
+	display: inline-block;
+	font-size: 12px;
+	color: #852424;
+	font-weight: bold;
+	float: left;
+	line-height: 20px;
+	padding-left: 8px;
+	border-left: 2px solid #852424;
+	margin-left: 5px;
+}
+
+/* Reachable tiles highlight on world map */
+
+#map span.reachable {
+	outline: 1px solid #555;
+	background-color: rgba(200, 200, 150, 0.3);
+}
+
+#map span.landmark.reachable {
+	outline: 1px solid #333;
+	background-color: rgba(180, 220, 180, 0.4);
+}
+

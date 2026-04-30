@@ -791,5 +791,51 @@ _.setTranslation({
   "says he can build you a hut for less wood": "říká, že umí postavit chýši s použitím méně dřeva",
   "300 wood": "dej 300",
   "the shady builder has made off with your wood": "pochybný stavitel spěšně zmizel i se dřevem",
-  "the shady builder builds a hut": "pochybný stavitel postavil chýši"
+  "the shady builder builds a hut": "pochybný stavitel postavil chýši",
+
+  // --- nové překlady ze zazeh-test modifikací ---
+
+  // Kalendář
+  "day ": "den ",
+
+  // Vesnice / pracovníci
+  " (per worker)": " (na pracovníka)",
+
+  // Cestování - maso
+  "the meat has started to spoil": "maso se začalo kazit",
+  "the meat continues to spoil": "maso se stále kazí",
+
+  // Smrt a hřbitov
+  "the village has seen much suffering": "vesnice zažila mnoho utrpení",
+  "the dead are many now. perhaps a cemetery is needed": "mrtvých je mnoho. možná by se hodil hřbitov",
+  "so many graves. the weight of loss is palpable": "tolik hrobů. tíha ztráty je hmatatelná",
+  "the dead grow many. a cemetery appears near the village.": "mrtvých přibývá. u vesnice se objevil hřbitov.",
+
+  // Hřbitov – scéna
+  "A Cemetery": "Hřbitov",
+  "A&nbsp;Cemetery": "Hřbitov",
+  "rows of weathered stones fill the plot.": "řady zvětralých kamenů lemují hřbitov.",
+  "the names of the dead have been worn by time and rain.": "jména mrtvých se vytratila pod náporem času a deště.",
+  "the cemetery is quiet and still.": "hřbitov je tichý a klidný.",
+  "wipe gravestones": "otři náhrobky",
+  "the stones are clean now. a moment of peace.": "kameny jsou čisté. chvíle klidu.",
+  "each name a story, each story a loss.": "každé jméno příběh, každý příběh ztráta.",
+  "something settles in the chest. the grief becomes strength.": "v hrudi se cosi usadí. zármutek se stává silou.",
+
+  // Perk: truchlící
+  "mourner": "truchlící",
+  "the weight of loss grants an extra 5 hp": "tíha ztráty přináší 5 životů navíc",
+  "learned to carry the weight of the dead": "naučen nést tíhu ztráty",
+
+  // Zvěd – tři mapy najednou
+  "buy 3 maps": "kup 3 mapy",
+  "three maps uncover more of the world": "tři mapy odkrývají více světa",
+
+  // Výzva jedné chýše
+  "single hut challenge": "výzva jedné chýše",
+  "single hut challenge active. only one hut allowed.": "výzva jedné chýše aktivní. povolena jen jedna chýše.",
+  "only one hut is allowed in this challenge": "tato výzva dovoluje pouze jednu chýši",
+
+  // Tulák na mapě
+  "Wanderer": "Tulák"
 });

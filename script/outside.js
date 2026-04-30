@@ -22,8 +22,8 @@ var Outside = {
 			name: _('hunter'),
 			delay: 10,
 			stores: {
-				'fur': 0.5,
-				'meat': 0.5
+				'fur': 1,
+				'meat': 1
 			}
 		},
 		'trapper': {
@@ -155,6 +155,10 @@ var Outside = {
 			if(!$SM.get('game.buildings')) $SM.set('game.buildings', {});
 			if(!$SM.get('game.population')) $SM.set('game.population', 0);
 			if(!$SM.get('game.workers')) $SM.set('game.workers', {});
+			if(!$SM.get('game.workerTargets')) $SM.set('game.workerTargets', {});
+		} else {
+			// Ensure workerTargets exists for saves that predate this feature
+			if(!$SM.get('game.workerTargets')) $SM.set('game.workerTargets', {});
 		}
 		
 		this.updateVillage();
@@ -197,6 +201,19 @@ var Outside = {
 			}
 			Engine.log('population increased by ' + num);
 			$SM.add('game.population', num);
+			// Auto-assign workers to unfilled targets
+			var targets = $SM.get('game.workerTargets');
+			if(targets) {
+				for(var job in targets) {
+					var jobTarget = targets[job] || 0;
+					var jobActual = $SM.get('game.workers["'+job+'"]', true) || 0;
+					var gap = jobTarget - jobActual;
+					if(gap > 0 && Outside.getNumGatherers() > 0) {
+						var assign = Math.min(gap, Outside.getNumGatherers());
+						$SM.add('game.workers["'+job+'"]', assign);
+					}
+				}
+			}
 		}
 		Outside.schedulePopIncrease();
 	},
@@ -300,10 +317,13 @@ var Outside = {
 				}
 				
 			} else {
-				$('div#' + row.attr('id') + ' > div.row_val > span', workers).text(workerCount);
+				var wTarget = $SM.get('game.workerTargets["'+k+'"]', true) || 0;
+				var displayText = workerCount + (wTarget > workerCount ? ' (→' + wTarget + ')' : '');
+				$('div#' + row.attr('id') + ' > div.row_val > span', workers).text(displayText);
 			}
 			numGatherers -= workerCount;
-			if(workerCount === 0) {
+			var kTarget = $SM.get('game.workerTargets["'+k+'"]', true) || 0;
+			if(workerCount === 0 && kTarget === 0) {
 				$('.dnBtn', row).addClass('disabled');
 				$('.dnManyBtn', row).addClass('disabled');
 			} else {
@@ -320,8 +340,9 @@ var Outside = {
 		}
 		
 		if(numGatherers === 0) {
-			$('.upBtn', '#workers').addClass('disabled');
-			$('.upManyBtn', '#workers').addClass('disabled');
+			// Keep up buttons enabled so targets can always be set
+			$('.upBtn', '#workers').removeClass('disabled');
+			$('.upManyBtn', '#workers').removeClass('disabled');
 		} else {
 			$('.upBtn', '#workers').removeClass('disabled');
 			$('.upManyBtn', '#workers').removeClass('disabled');
@@ -354,6 +375,10 @@ var Outside = {
 		$('<span>').text(num).appendTo(val);
 		
 		if(key != 'gatherer') {
+			var wTarget = $SM.get('game.workerTargets["'+key+'"]', true) || 0;
+			if(wTarget > num) {
+				$('span', val).text(num + ' (\u2192' + wTarget + ')');
+			}
 			$('<div>').addClass('upBtn').appendTo(val).click([1], Outside.increaseWorker);
 			$('<div>').addClass('dnBtn').appendTo(val).click([1], Outside.decreaseWorker);
 			$('<div>').addClass('upManyBtn').appendTo(val).click([10], Outside.increaseWorker);
@@ -376,19 +401,29 @@ var Outside = {
 	
 	increaseWorker: function(btn) {
 		var worker = $(this).closest('.workerRow').attr('key');
+		var increaseAmt = btn.data;
+		// Always update the target count
+		var currentTarget = $SM.get('game.workerTargets["'+worker+'"]', true) || 0;
+		$SM.set('game.workerTargets["'+worker+'"]', currentTarget + increaseAmt);
+		// Assign actual workers from available gatherers
 		if(Outside.getNumGatherers() > 0) {
-			var increaseAmt = Math.min(Outside.getNumGatherers(), btn.data);
-			Engine.log('increasing ' + worker + ' by ' + increaseAmt);
-			$SM.add('game.workers["'+worker+'"]', increaseAmt);
+			var actualIncrease = Math.min(Outside.getNumGatherers(), increaseAmt);
+			Engine.log('increasing ' + worker + ' by ' + actualIncrease);
+			$SM.add('game.workers["'+worker+'"]', actualIncrease);
 		}
 	},
 	
 	decreaseWorker: function(btn) {
 		var worker = $(this).closest('.workerRow').attr('key');
+		var decreaseAmt = btn.data;
+		// Decrease target
+		var currentTarget = $SM.get('game.workerTargets["'+worker+'"]', true) || 0;
+		$SM.set('game.workerTargets["'+worker+'"]', Math.max(0, currentTarget - decreaseAmt));
+		// Decrease actual workers
 		if($SM.get('game.workers["'+worker+'"]') > 0) {
-			var decreaseAmt = Math.min($SM.get('game.workers["'+worker+'"]') || 0, btn.data);
-			Engine.log('decreasing ' + worker + ' by ' + decreaseAmt);
-			$SM.add('game.workers["'+worker+'"]', decreaseAmt * -1);
+			var decreaseActual = Math.min($SM.get('game.workers["'+worker+'"]') || 0, decreaseAmt);
+			Engine.log('decreasing ' + worker + ' by ' + decreaseActual);
+			$SM.add('game.workers["'+worker+'"]', decreaseActual * -1);
 		}
 	},
 	
@@ -520,7 +555,10 @@ var Outside = {
 					if(curIncome[store] != stores[store]) needsUpdate = true;
 					var row = $('<div>').addClass('storeRow');
 					$('<div>').addClass('row_key').text(_(store)).appendTo(row);
-					$('<div>').addClass('row_val').text(Engine.getIncomeMsg(stores[store], income.delay)).appendTo(row);
+					// When 0 workers, show per-worker rate (treat as if 1 worker for display)
+					var displayAmount = (num === 0) ? income.stores[store] : stores[store];
+					var displayLabel = (num === 0) ? _(' (per worker)') : '';
+					$('<div>').addClass('row_val').text(Engine.getIncomeMsg(displayAmount, income.delay) + displayLabel).appendTo(row);
 					row.appendTo(tooltip);
 				}
 				if(needsUpdate) {
@@ -617,6 +655,13 @@ var Outside = {
 				}
 			}
 		}
+		// Cap individual drop amounts to prevent absurd quantities
+		var DROP_CAP = 50;
+		for(var d in drops) {
+			if(d !== 'bait' && drops[d] > DROP_CAP) {
+				drops[d] = DROP_CAP;
+			}
+		}
 		/// TRANSLATORS : Mind the whitespace at the end.
 		var s = _('the traps contain ');
 		for(var l = 0, len = msg.length; l < len; l++) {
@@ -639,7 +684,7 @@ var Outside = {
 	handleStateUpdates: function(e){
 		if(e.category == 'stores'){
 			Outside.updateVillage();
-		} else if(e.stateName.indexOf('game.workers') === 0 || e.stateName.indexOf('game.population') === 0){
+		} else if(e.stateName.indexOf('game.workers') === 0 || e.stateName.indexOf('game.population') === 0 || e.stateName.indexOf('game.workerTargets') === 0){
 			Outside.updateVillage();
 			Outside.updateWorkersView();
 			Outside.updateVillageIncome();

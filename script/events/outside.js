@@ -41,7 +41,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -59,7 +60,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -85,7 +87,8 @@ Events.Outside = [
 					'mourn': {
 						text: _('mourn'),
 						notification: _('some villagers have died'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 20
 					}
 				}
 			}
@@ -247,7 +250,8 @@ Events.Outside = [
 					'end': {
 						text: _('go home'),
 						notification: _('predators become prey. price is unfair'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 20
 					}
 				}
 			}
@@ -281,7 +285,8 @@ Events.Outside = [
 					'end': {
 						text: _('go home'),
 						notification: _('warfare is bloodthirsty'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 20
 					}
 				}
 			}

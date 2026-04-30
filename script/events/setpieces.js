@@ -2958,7 +2958,7 @@ Events.Setpieces = {
 				onLoad: function() {
 					World.markVisited(World.curPos[0], World.curPos[1]);
 					World.setWater(World.getMaxWater());
-					Notifications.notify(null, _('water replenished'));
+					Notifications.notify(null, _('water replenished'), MSG_COLOR_GREEN);
 				},
 				loot: {
 					'cured meat': {
@@ -3570,5 +3570,50 @@ Events.Setpieces = {
 				}
 			}
 		}
-	}
+	},
+
+"cemetery": { /* A Cemetery */
+title: _('A Cemetery'),
+scenes: {
+'start': {
+text: [
+_('rows of weathered stones fill the plot.'),
+_('the names of the dead have been worn by time and rain.')
+],
+notification: _('the cemetery is quiet and still.'),
+buttons: {
+'wipe': {
+text: _('wipe gravestones'),
+nextScene: {1: 'wiped'}
+},
+'leave': {
+text: _('leave'),
+cooldown: Events._LEAVE_COOLDOWN,
+nextScene: 'end'
+}
+}
+},
+'wiped': {
+text: [
+_('the stones are clean now. a moment of peace.'),
+_('each name a story, each story a loss.')
+],
+onLoad: function() {
+$SM.set('character.gravesWiped', ($SM.get('character.gravesWiped', true) || 0) + 1);
+var wiped = $SM.get('character.gravesWiped', true) || 0;
+World.setHp(Math.min(World.health + 2, World.getMaxHealth()));
+if(wiped >= 5 && !$SM.hasPerk('mourner')) {
+$SM.addPerk('mourner');
+}
+},
+buttons: {
+'leave': {
+text: _('leave'),
+cooldown: Events._LEAVE_COOLDOWN,
+nextScene: 'end'
+}
+}
+}
+}
+}
 };

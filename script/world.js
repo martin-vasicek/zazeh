@@ -20,13 +20,14 @@ var World = {
 		BOREHOLE: 'B',
 		BATTLEFIELD: 'F',
 		SWAMP: 'M',
-		CACHE: 'U'
+		CACHE: 'U',
+		CEMETERY: 'K'
 	},
 	TILE_PROBS: {},
 	LANDMARKS: {},
 	STICKINESS: 0.5, // 0 <= x <= 1
 	LIGHT_RADIUS: 2,
-	BASE_WATER: 10,
+	BASE_WATER: 20,
 	MOVES_PER_FOOD: 2,
 	MOVES_PER_WATER: 1,
 	DEATH_COOLDOWN: 120,
@@ -128,6 +129,12 @@ var World = {
 		World.LANDMARKS[World.TILE.BOREHOLE] = { num: 10, minRadius: 15, maxRadius: World.RADIUS * 1.5, scene: 'borehole', label:  _('A&nbsp;Borehole')};
 		World.LANDMARKS[World.TILE.BATTLEFIELD] = { num: 5, minRadius: 18, maxRadius: World.RADIUS * 1.5, scene: 'battlefield', label:  _('A&nbsp;Battlefield')};
 		World.LANDMARKS[World.TILE.SWAMP] = { num: 1, minRadius: 15, maxRadius: World.RADIUS * 1.5, scene: 'swamp', label:  _('A&nbsp;Murky&nbsp;Swamp')};
+
+		// Cemetery appears after enough deaths - added dynamically by die()
+		// Check if cemetery already exists in saved map
+		if($SM.get('game.cemeteryPlaced', true)) {
+			World.LANDMARKS[World.TILE.CEMETERY] = { num: 1, minRadius: 2, maxRadius: 8, scene: 'cemetery', label: _('A&nbsp;Cemetery') };
+		}
 
 		// Only add the cache if there is prestige data
 		if($SM.get('previous.stores')) {
@@ -349,9 +356,25 @@ var World = {
 		World.doSpace();
 		if(World.checkDanger()) {
 			if(World.danger) {
-				Notifications.notify(World, _('dangerous to be this far from the village without proper protection'));
+				Notifications.notify(World, _('dangerous to be this far from the village without proper protection'), MSG_COLOR_WARNINGINFO);
 			} else {
-				Notifications.notify(World, _('safer here'));
+				Notifications.notify(World, _('safer here'), MSG_COLOR_GREEN);
+			}
+		}
+		// Fresh meat spoils during travel: every 8 moves, lose 1 meat
+		World.meatMove = (World.meatMove || 0) + 1;
+		if(World.meatMove >= 8) {
+			World.meatMove = 0;
+			var meatAmt = Path.outfit['meat'] || 0;
+			if(meatAmt > 0) {
+				Path.outfit['meat'] = meatAmt - 1;
+				if(!World.meatSpoiling) {
+					Notifications.notify(World, _('the meat has started to spoil'), MSG_COLOR_WARNINGINFO);
+					World.meatSpoiling = true;
+				} else {
+					Notifications.notify(World, _('the meat continues to spoil'), MSG_COLOR_WARNINGINFO);
+				}
+				World.updateSupplies();
 			}
 		}
 	},
@@ -451,12 +474,12 @@ var World = {
 			var num = Path.outfit['cured meat'];
 			num--;
 			if(num === 0) {
-				Notifications.notify(World, _('the meat has run out'));
+				Notifications.notify(World, _('the meat has run out'), MSG_COLOR_WARNING);
 			} else if(num < 0) {
 				// Starvation! Hooray!
 				num = 0;
 				if(!World.starvation) {
-					Notifications.notify(World, _('starvation sets in'));
+					Notifications.notify(World, _('starvation sets in'), MSG_COLOR_WARNING, true);
 					World.starvation = true;
 				} else {
 					$SM.set('character.starved', $SM.get('character.starved', true));
@@ -479,25 +502,32 @@ var World = {
 		if(World.waterMove >= movesPerWater) {
 			World.waterMove = 0;
 			var water = World.water;
-			water--;
+			water -= 2;
 			if(water === 0) {
-				Notifications.notify(World, _('there is no more water'));
+				Notifications.notify(World, _('there is no more water'), MSG_COLOR_WARNING);
 			} else if(water < 0) {
 				water = 0;
 				if(!World.thirst) {
-					Notifications.notify(World, _('the thirst becomes unbearable'));
+					Notifications.notify(World, _('the thirst becomes unbearable'), MSG_COLOR_WARNING, true);
 					World.thirst = true;
 				} else {
+					// Training thirst endurance even when not dying
 					$SM.set('character.dehydrated', $SM.get('character.dehydrated', true));
 					$SM.add('character.dehydrated', 1);
 					if($SM.get('character.dehydrated') >= 10 && !$SM.hasPerk('desert rat')) {
 						$SM.addPerk('desert rat');
 					}
-					World.die();
-					return false;
+					// Only die every second time thirst triggers (gives training without instant death)
+					World._thirstDeaths = (World._thirstDeaths || 0) + 1;
+					if(World._thirstDeaths >= 2) {
+						World._thirstDeaths = 0;
+						World.die();
+						return false;
+					}
 				}
 			} else {
 				World.thirst = false;
+				World._thirstDeaths = 0;
 			}
 			World.setWater(water);
 			World.updateSupplies();
@@ -591,7 +621,7 @@ var World = {
 				break;
 		}
 		if(msg != null) {
-			Notifications.notify(World, msg);
+			Notifications.notify(World, msg, MSG_COLOR_NOTIMPORTANT);
 		}
 	},
 
@@ -823,13 +853,21 @@ var World = {
 		World.state.map[x][y] = World.state.map[x][y] + '!';
 	},
 
-	drawMap: function() {
+\tdrawMap: function() {
 		var map = $('#map');
 		if(map.length === 0) {
 			map = new $('<div>').attr('id', 'map').appendTo('#worldOuter');
 			// register click handler
 			map.click(World.click);
 		}
+		// Calculate reachable distance: water is always the binding constraint.
+		// Each step costs 2 water (decrement by 2 per move, MOVES_PER_WATER=1).
+		// Cured meat extends range only beyond what water allows (outposts replenish water),
+		// but for display purposes water is the primary limiter.
+		var waterSteps = Math.floor(World.water / 2);
+		var meatMoves = Math.floor((Path.outfit['cured meat'] || 0) * World.MOVES_PER_FOOD);
+		// Show reachable only up to where both water AND food (if any) would allow
+		var reachableBudget = meatMoves > 0 ? Math.min(waterSteps, meatMoves) : waterSteps;
 		var mapString = "";
 		for(var j = 0; j <= World.RADIUS * 2; j++) {
 			for(var i = 0; i <= World.RADIUS * 2; i++) {
@@ -844,22 +882,26 @@ var World = {
 				} else {
 					ttClass += " bottom";
 				}
+				// Check if tile is reachable with current supplies
+				var dist = Math.abs(i - World.curPos[0]) + Math.abs(j - World.curPos[1]);
+				var reachable = dist > 0 && dist <= reachableBudget;
 				if(World.curPos[0] == i && World.curPos[1] == j) {
 					mapString += '<span class="landmark">@<div class="tooltip ' + ttClass + '">'+_('Wanderer')+'</div></span>';
 				} else if(World.state.mask[i][j]) {
 					var c = World.state.map[i][j];
+					var reachClass = reachable ? ' class="reachable"' : '';
 					switch(c) {
 						case World.TILE.VILLAGE:
-							mapString += '<span class="landmark">' + c + '<div class="tooltip' + ttClass + '">'+_('The&nbsp;Village')+'</div></span>';
+							mapString += '<span class="landmark"' + reachClass + '>' + c + '<div class="tooltip' + ttClass + '">'+_('The&nbsp;Village')+'</div></span>';
 							break;
 						default:
 							if(typeof World.LANDMARKS[c] != 'undefined' && (c != World.TILE.OUTPOST || !World.outpostUsed(i, j))) {
-								mapString += '<span class="landmark">' + c + '<div class="tooltip' + ttClass + '">' + World.LANDMARKS[c].label + '</div></span>';
+								mapString += '<span class="landmark"' + reachClass + '>' + c + '<div class="tooltip' + ttClass + '">' + World.LANDMARKS[c].label + '</div></span>';
 							} else {
 								if(c.length > 1) {
 									c = c[0];
 								}
-								mapString += c;
+								mapString += reachable ? '<span class="reachable">' + c + '</span>' : c;
 							}
 							break;
 					}
@@ -878,8 +920,46 @@ var World = {
 			Engine.log('player death');
 			Engine.event('game event', 'death');
 			Engine.keyLock = true;
+			// Track total deaths
+			var totalDeaths = ($SM.get('game.totalDeaths', true) || 0) + 1;
+			$SM.set('game.totalDeaths', totalDeaths);
+			// Notify at death milestones
+			if(totalDeaths === 5) {
+				Notifications.notify(Room, _('the village has seen much suffering'), MSG_COLOR_WARNINGINFO);
+			} else if(totalDeaths === 10) {
+				Notifications.notify(Room, _('the dead are many now. perhaps a cemetery is needed'), MSG_COLOR_WARNINGINFO, true);
+				// Place the cemetery in the persisted world map
+				if(!$SM.get('game.cemeteryPlaced', true)) {
+					$SM.set('game.cemeteryPlaced', true);
+					if(!World.LANDMARKS[World.TILE.CEMETERY]) {
+						World.LANDMARKS[World.TILE.CEMETERY] = { num: 1, minRadius: 2, maxRadius: 8, scene: 'cemetery', label: _('A&nbsp;Cemetery') };
+					}
+					var savedMap = $SM.get('game.world.map');
+					if(savedMap) {
+						var placed = false;
+						var attempts = 0;
+						while(!placed && attempts < 200) {
+							attempts++;
+							var cx = World.RADIUS + Math.floor(Math.random() * 13) - 6;
+							var cy = World.RADIUS + Math.floor(Math.random() * 13) - 6;
+							var dist = Math.abs(cx - World.RADIUS) + Math.abs(cy - World.RADIUS);
+							if(dist >= 2 && dist <= 8 && cx >= 0 && cx <= World.RADIUS * 2 && cy >= 0 && cy <= World.RADIUS * 2) {
+								var tile = savedMap[cx][cy];
+								if(tile === World.TILE.FOREST || tile === World.TILE.FIELD || tile === World.TILE.BARRENS) {
+									savedMap[cx][cy] = World.TILE.CEMETERY;
+									$SM.set('game.world.map', savedMap);
+									placed = true;
+								}
+							}
+						}
+					}
+				}
+			} else if(totalDeaths === 20) {
+				Notifications.notify(Room, _('so many graves. the weight of loss is palpable'), MSG_COLOR_WARNINGINFO);
+			}
+			Engine.keyLock = true;
 			// Dead! Discard any world changes and go home
-			Notifications.notify(World, _('the world fades'));
+			Notifications.notify(World, _('the world fades'), MSG_COLOR_WARNINGINFO, true);
 			World.state = null;
 			Path.outfit = {};
 			$SM.remove('outfit');
@@ -947,14 +1027,15 @@ var World = {
 	},
 
 	getMaxHealth: function() {
+		var bonusHp = $SM.hasPerk('mourner') ? 5 : 0;
 		if($SM.get('stores["s armour"]', true) > 0) {
-			return World.BASE_HEALTH + 35;
+			return World.BASE_HEALTH + bonusHp + 35;
 		} else if($SM.get('stores["i armour"]', true) > 0) {
-			return World.BASE_HEALTH + 15;
+			return World.BASE_HEALTH + bonusHp + 15;
 		} else if($SM.get('stores["l armour"]', true) > 0) {
-			return World.BASE_HEALTH + 5;
+			return World.BASE_HEALTH + bonusHp + 5;
 		}
-		return World.BASE_HEALTH;
+		return World.BASE_HEALTH + bonusHp;
 	},
 
 	getHitChance: function() {
@@ -966,11 +1047,11 @@ var World = {
 
 	getMaxWater: function() {
 		if($SM.get('stores["water tank"]', true) > 0) {
-			return World.BASE_WATER + 50;
+			return World.BASE_WATER + 100;
 		} else if($SM.get('stores.cask', true) > 0) {
-			return World.BASE_WATER + 20;
+			return World.BASE_WATER + 40;
 		} else if($SM.get('stores.waterskin', true) > 0) {
-			return World.BASE_WATER + 10;
+			return World.BASE_WATER + 20;
 		}
 		return World.BASE_WATER;
 	},
@@ -983,7 +1064,7 @@ var World = {
 	},
 
 	useOutpost: function() {
-		Notifications.notify(null, _('water replenished'));
+		Notifications.notify(null, _('water replenished'), MSG_COLOR_GREEN);
 		World.setWater(World.getMaxWater());
 		// Mark this outpost as used
 		World.usedOutposts[World.curPos[0] + ',' + World.curPos[1]] = true;
@@ -1002,6 +1083,7 @@ var World = {
 		World.waterMove = 0;
 		World.starvation = false;
 		World.thirst = false;
+		World.meatSpoiling = false;
 		World.usedOutposts = {};
 		World.curPos = World.copyPos(World.VILLAGE_POS);
 		World.drawMap();

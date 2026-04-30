@@ -126,6 +126,10 @@ var Events = {
 			// No weapons? You can punch stuff!
 			Events.createAttackButton('fists').prependTo(attackBtns);
 		}
+		// Martial artist always has fists available
+		if($SM.hasPerk('martial artist') && $('#attack_fists', attackBtns).length === 0) {
+			Events.createAttackButton('fists').prependTo(attackBtns);
+		}
 		$('<div>').addClass('clear').appendTo(attackBtns);
 
 		var healBtns = $('<div>').appendTo(btns).attr('id','healButtons');
@@ -234,8 +238,10 @@ var Events = {
 			cost: { 'cured meat': 1 }
 		});
 
-		if(Path.outfit['cured meat'] === 0) {
-			Button.setDisabled(btn, true);
+		btn.addClass('btn-heal');
+
+		if(!Path.outfit['cured meat'] || Path.outfit['cured meat'] === 0) {
+			btn.hide();
 		}
 
 		return btn;
@@ -253,6 +259,8 @@ var Events = {
 			click: Events.useMeds,
 			cost: { 'medicine': 1 }
 		});
+
+		btn.addClass('btn-heal');
 
 		if((Path.outfit['medicine'] || 0) === 0) {
 			Button.setDisabled(btn, true);
@@ -279,6 +287,8 @@ var Events = {
 		if(typeof weapon.damage == 'number' && weapon.damage > 0) {
 			btn.addClass('weaponButton');
 		}
+		// Color-code: combat buttons get btn-combat class
+		btn.addClass('btn-combat');
 
 		for(var k in weapon.cost) {
 			if(typeof Path.outfit[k] != 'number' || Path.outfit[k] < weapon.cost[k]) {
@@ -891,6 +901,22 @@ var Events = {
 			}
 			if(typeof info.cooldown == 'number') {
 				Button.cooldown(b);
+			}
+			// Auto-dismiss: button fires itself after specified delay (seconds)
+			if(typeof info.autoClick == 'number' && info.autoClick > 0) {
+				(function(btn, delay) {
+					btn.addClass('btn-autodismiss');
+					// Animate the auto-dismiss progress bar (reverse fill)
+					var bar = $('<div>').addClass('cooldown autodismiss-bar').appendTo(btn);
+					bar.css('width', '100%');
+					bar.animate({'width': '0%'}, delay * 1000, 'linear');
+					// Actually trigger the click after the delay
+					Engine.setTimeout(function() {
+						if(!Button.isDisabled(btn)) {
+							btn.click();
+						}
+					}, delay * 1000, true);
+				})(b, info.autoClick);
 			}
 			btnsList.push(b);
 		}

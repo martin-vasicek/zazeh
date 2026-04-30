@@ -982,6 +982,12 @@ var Room = {
 		if(craftable.maximum <= numThings) {
 			return;
 		}
+
+		// Single hut challenge: cannot build more than one hut
+		if(thing === 'hut' && $SM.get('game.singleHutChallenge', true) && numThings >= 1) {
+			Notifications.notify(Room, _('only one hut is allowed in this challenge'), MSG_COLOR_WARNINGINFO);
+			return;
+		}
 		
 		var storeMod = {};
 		var cost = craftable.cost();

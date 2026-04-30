@@ -43,7 +43,8 @@ Events.Room = [
 					},
 					'goodbye': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			}
@@ -81,7 +82,8 @@ Events.Room = [
 				buttons: {
 					'backinside': {
 						text: _('go back inside'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -94,7 +96,8 @@ Events.Room = [
 				buttons: {
 					'backinside': {
 						text: _('go back inside'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -300,6 +303,10 @@ Events.Room = [
 				notification: _('the shady builder builds a hut'),
 				onLoad: function() {
 					var n = $SM.get('game.buildings["hut"]', true);
+					if($SM.get('game.singleHutChallenge', true) && n >= 1) {
+						Notifications.notify(Room, _('only one hut is allowed in this challenge'), MSG_COLOR_WARNINGINFO);
+						return;
+					}
 					if(n < 20){
 						$SM.set('game.buildings["hut"]',n+1);
 					}
@@ -307,7 +314,8 @@ Events.Room = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -495,6 +503,19 @@ Events.Room = [
 						notification: _('the map uncovers a bit of the world'),
 						onChoose: World.applyMap
 					},
+					'buy3Maps': {
+						text: _('buy 3 maps'),
+						cost: { 'fur': 500, 'scales': 25 },
+						available: function() {
+							return !World.seenAll;
+						},
+						notification: _('three maps uncover more of the world'),
+						onChoose: function() {
+							World.applyMap();
+							World.applyMap();
+							World.applyMap();
+						}
+					},
 					'learn': {
 						text: _('learn scouting'),
 						cost: { 'fur': 1000, 'scales': 50, 'teeth': 20 },
@@ -507,7 +528,8 @@ Events.Room = [
 					},
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 30
 					}
 				}
 			}

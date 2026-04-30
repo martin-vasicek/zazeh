@@ -324,6 +324,9 @@ var StateManager = {
 	//PERKS
 	addPerk: function(name) {
 		$SM.set('character.perks["'+name+'"]', true);
+		// Record the day the perk was acquired
+		var day = $SM.get('game.calendar.day', true) || 1;
+		$SM.set('character.perkDates["'+name+'"]', day);
 		Notifications.notify(null, Engine.Perks[name].notify);
 	},
 
@@ -364,20 +367,30 @@ var StateManager = {
 					if(source == 'thieves') $SM.addStolen(income.stores);
 
 					var cost = income.stores;
-					var ok = true;
-					if (source != 'thieves') {
-						for (var k in cost) {
-							var have = $SM.get('stores["' + k + '"]', true);
-							if (have + cost[k] < 0) {
-								ok = false;
-								break;
+
+					if(source != 'thieves') {
+						// Proportional production: calculate scale based on available inputs
+						var scale = 1.0;
+						var hasInputs = false;
+						for(var k in cost) {
+							if(cost[k] < 0) {
+								hasInputs = true;
+								var have = $SM.get('stores["' + k + '"]', true);
+								var needed = -cost[k];
+								if(have < needed) {
+									scale = Math.min(scale, have / needed);
+								}
 							}
+						}
+						if(scale > 0) {
+							var scaledStores = {};
+							for(var s in cost) {
+								scaledStores[s] = (scale < 1.0) ? Math.round(cost[s] * scale) : cost[s];
+							}
+							$SM.addM('stores', scaledStores, true);
 						}
 					}
 
-					if(ok){
-						$SM.addM('stores', income.stores, true);
-					}
 					changed = true;
 					if(typeof income.delay == 'number') {
 						income.timeLeft = income.delay;
@@ -387,6 +400,14 @@ var StateManager = {
 		}
 		if(changed){
 			$SM.fireUpdate('income', true);
+		}
+		// Calendar: increment global tick, every 10 ticks = 1 day
+		var tick = ($SM.get('game.calendar.tick', true) || 0) + 1;
+		$SM.set('game.calendar.tick', tick, true);
+		if(tick % 10 === 0) {
+			var day = ($SM.get('game.calendar.day', true) || 0) + 1;
+			$SM.set('game.calendar.day', day, true);
+			Engine.updateCalendar();
 		}
 		Engine._incomeTimeout = Engine.setTimeout($SM.collectIncome, 1000);
 	},

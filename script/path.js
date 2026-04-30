@@ -107,7 +107,12 @@ var Path = {
 				if($SM.get('character.perks["'+k+'"]') && r.length === 0) {
 					r = $('<div>').attr('id', id).addClass('perkRow').appendTo(perks);
 					$('<div>').addClass('row_key').text(_(k)).appendTo(r);
-					$('<div>').addClass('tooltip bottom right').text(Engine.Perks[k].desc).appendTo(r);
+					var perkDate = $SM.get('character.perkDates["'+k+'"]', true);
+					var tooltipText = Engine.Perks[k].desc;
+					if(perkDate) {
+						tooltipText += ' (' + _('day ') + perkDate + ')';
+					}
+					$('<div>').addClass('tooltip bottom right').text(tooltipText).appendTo(r);
 				}
 			}
 			

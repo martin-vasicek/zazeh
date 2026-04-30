@@ -67,6 +67,11 @@
 				name: _('gastronome'),
 				desc: _('restore more health when eating'),
 				notify: _('learned to make the most of food')
+			},
+			'mourner': {
+				name: _('mourner'),
+				desc: _('the weight of loss grants an extra 5 hp'),
+				notify: _('something settles in the chest. the grief becomes strength.')
 			}
 		},
 
@@ -204,6 +209,18 @@
 			Events.init();
 			Room.init();
 
+			// Single hut challenge: activated via ?singleHut=true URL parameter
+			if(location.search.indexOf('singleHut=true') >= 0 && !$SM.get('game.singleHutChallenge', true)) {
+				$SM.set('game.singleHutChallenge', true);
+				Notifications.notify(Room, _('single hut challenge active. only one hut allowed.'), MSG_COLOR_WARNINGINFO, true);
+			}
+			// Show challenge indicator if active
+			if($SM.get('game.singleHutChallenge', true)) {
+				$('<div>').attr('id', 'challenge_display')
+					.text(_('single hut challenge'))
+					.appendTo($('div#header'));
+			}
+
 			if(typeof $SM.get('stores.wood') != 'undefined') {
 				Outside.init();
 			}
@@ -224,6 +241,38 @@
 
 			Engine.saveLanguage();
 			Engine.travelTo(Room);
+
+			// Page Visibility API: pause income timer when tab hidden
+			Engine._visibilityHiddenAt = null;
+			var AFK_INCOME_CAP_MS = 30 * 60 * 1000; // cap AFK income at 30 minutes
+			document.addEventListener('visibilitychange', function() {
+				if(document.hidden) {
+					Engine._visibilityHiddenAt = Date.now();
+					if(Engine._incomeTimeout) {
+						clearTimeout(Engine._incomeTimeout);
+						Engine._incomeTimeout = null;
+					}
+				} else {
+					if(Engine._visibilityHiddenAt !== null) {
+						var hiddenMs = Date.now() - Engine._visibilityHiddenAt;
+						Engine._visibilityHiddenAt = null;
+						// If hidden too long, skip income ticks beyond the cap
+						// Just resume the timer (income was paused, so no catch-up)
+						if(hiddenMs > AFK_INCOME_CAP_MS) {
+							Engine.log('AFK too long (' + Math.round(hiddenMs/1000) + 's), skipping excess income');
+						}
+					}
+					if(!Engine._incomeTimeout) {
+						Engine._incomeTimeout = Engine.setTimeout($SM.collectIncome, 1000);
+					}
+				}
+			});
+
+			// Periodic save to ensure outfit and other directly-mutated state is persisted
+			// (Path.outfit is modified without going through $SM.set, so can go unsaved)
+			Engine.setInterval(function() {
+				Engine.saveGame();
+			}, 60 * 1000, true);
 
 		},
 
@@ -662,7 +711,7 @@
 					Engine.activeModule.keyDown(e);
 				}
 			}
-			return jQuery.inArray(e.keycode, [37,38,39,40]) < 0;
+			return jQuery.inArray(e.keyCode, [37,38,39,40]) < 0;
 		},
 
 		keyUp: function(e) {
@@ -764,6 +813,15 @@
 
 		handleStateUpdates: function(e){
 
+		},
+
+		updateCalendar: function() {
+			var day = $SM.get('game.calendar.day', true) || 0;
+			var calEl = $('#calendar_display');
+			if(calEl.length === 0) {
+				calEl = $('<div>').attr('id', 'calendar_display').addClass('calendar-display').appendTo($('div#header'));
+			}
+			calEl.text(_('day ') + day);
 		},
 
 		switchLanguage: function(dom){
