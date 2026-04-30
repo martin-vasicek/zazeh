@@ -40,7 +40,8 @@ Events.Global = [
 				buttons: {
 					'leave': {
 						text: _('leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -57,7 +58,8 @@ Events.Global = [
 				buttons: {
 					'leave': {
 						text: _('leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}

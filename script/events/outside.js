@@ -28,7 +28,8 @@ Events.Outside = [
 					},
 					'ignore': {
 						text: _('ignore them'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 30
 					}
 				}
 			},
@@ -127,7 +128,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -145,7 +147,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -198,7 +201,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -216,7 +220,8 @@ Events.Outside = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}

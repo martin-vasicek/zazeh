@@ -70,7 +70,8 @@ Events.Room = [
 					},
 					'ignore': {
 						text: _('ignore them'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 20
 					}
 				}
 			},
@@ -123,7 +124,8 @@ Events.Room = [
 					},
 					'ignore': {
 						text: _('ignore them'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 20
 					}
 				}
 			},
@@ -143,7 +145,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -163,7 +166,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -183,7 +187,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -215,7 +220,8 @@ Events.Room = [
 					},
 					'deny': {
 						text: _('turn him away'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -228,7 +234,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -241,7 +248,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -254,7 +262,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -280,7 +289,8 @@ Events.Room = [
 					},
 					'deny': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -292,7 +302,8 @@ Events.Room = [
 				buttons: {
 					'end': {
 						text: _('go home'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -348,7 +359,8 @@ Events.Room = [
 					},
 					'deny': {
 						text: _('turn him away'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -371,7 +383,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -394,7 +407,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -427,7 +441,8 @@ Events.Room = [
 					},
 					'deny': {
 						text: _('turn her away'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -450,7 +465,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -473,7 +489,8 @@ Events.Room = [
 				buttons: {
 					'leave': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}
@@ -561,7 +578,8 @@ Events.Room = [
 					},
 					'deny': {
 						text: _('turn him away'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -631,7 +649,8 @@ Events.Room = [
 					},
 					'ignore': {
 						text: _('tell him to leave'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 60
 					}
 				}
 			},
@@ -647,7 +666,8 @@ Events.Room = [
 				buttons: {
 					'bye': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -663,7 +683,8 @@ Events.Room = [
 				buttons: {
 					'bye': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -679,7 +700,8 @@ Events.Room = [
 				buttons: {
 					'bye': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			},
@@ -690,7 +712,8 @@ Events.Room = [
 				buttons: {
 					'bye': {
 						text: _('say goodbye'),
-						nextScene: 'end'
+						nextScene: 'end',
+						autoClick: 15
 					}
 				}
 			}

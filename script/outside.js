@@ -159,6 +159,17 @@ var Outside = {
 		} else {
 			// Ensure workerTargets exists for saves that predate this feature
 			if(!$SM.get('game.workerTargets')) $SM.set('game.workerTargets', {});
+			// Sanitize corrupted workerTargets (could be strings from an array-data bug)
+			var _pop = $SM.get('game.population', true) || 0;
+			var _targets = $SM.get('game.workerTargets');
+			if(_targets) {
+				for(var _k in _targets) {
+					var _t = parseInt(_targets[_k]) || 0;
+					if(_t !== _targets[_k] || _t > _pop) {
+						$SM.set('game.workerTargets["'+_k+'"]', Math.min(_t, _pop));
+					}
+				}
+			}
 		}
 		
 		this.updateVillage();
@@ -379,10 +390,10 @@ var Outside = {
 			if(wTarget > num) {
 				$('span', val).text(num + ' (\u2192' + wTarget + ')');
 			}
-			$('<div>').addClass('upBtn').appendTo(val).click([1], Outside.increaseWorker);
-			$('<div>').addClass('dnBtn').appendTo(val).click([1], Outside.decreaseWorker);
-			$('<div>').addClass('upManyBtn').appendTo(val).click([10], Outside.increaseWorker);
-			$('<div>').addClass('dnManyBtn').appendTo(val).click([10], Outside.decreaseWorker);
+			$('<div>').addClass('upBtn').appendTo(val).click(1, Outside.increaseWorker);
+			$('<div>').addClass('dnBtn').appendTo(val).click(1, Outside.decreaseWorker);
+			$('<div>').addClass('upManyBtn').appendTo(val).click(10, Outside.increaseWorker);
+			$('<div>').addClass('dnManyBtn').appendTo(val).click(10, Outside.decreaseWorker);
 		}
 		
 		$('<div>').addClass('clear').appendTo(row);
@@ -546,22 +557,24 @@ var Outside = {
 			if(typeof num == 'number') {
 				var stores = {};
 				if(num < 0) num = 0;
-				var tooltip = $('.tooltip', 'div#workers_row_' + worker.replace(' ', '-'));
-				tooltip.empty();
 				var needsUpdate = false;
 				var curIncome = $SM.getIncome(worker);
 				for(var store in income.stores) {
 					stores[store] = income.stores[store] * num;
 					if(curIncome[store] != stores[store]) needsUpdate = true;
-					var row = $('<div>').addClass('storeRow');
-					$('<div>').addClass('row_key').text(_(store)).appendTo(row);
-					// When 0 workers, show per-worker rate (treat as if 1 worker for display)
-					var displayAmount = (num === 0) ? income.stores[store] : stores[store];
-					var displayLabel = (num === 0) ? _(' (per worker)') : '';
-					$('<div>').addClass('row_val').text(Engine.getIncomeMsg(displayAmount, income.delay) + displayLabel).appendTo(row);
-					row.appendTo(tooltip);
 				}
 				if(needsUpdate) {
+					var tooltip = $('.tooltip', 'div#workers_row_' + worker.replace(' ', '-'));
+					tooltip.empty();
+					for(var store in income.stores) {
+						var row = $('<div>').addClass('storeRow');
+						$('<div>').addClass('row_key').text(_(store)).appendTo(row);
+						// When 0 workers, show per-worker rate (treat as if 1 worker for display)
+						var displayAmount = (num === 0) ? income.stores[store] : stores[store];
+						var displayLabel = (num === 0) ? _(' (per worker)') : '';
+						$('<div>').addClass('row_val').text(Engine.getIncomeMsg(displayAmount, income.delay) + displayLabel).appendTo(row);
+						row.appendTo(tooltip);
+					}
 					$SM.setIncome(worker, {
 						delay: income.delay,
 						stores: stores

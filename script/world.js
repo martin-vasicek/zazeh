@@ -674,13 +674,32 @@ var World = {
 	applyMap: function() {
 		if(!World.seenAll){
 			var x,y,mask = $SM.get('game.world.mask');
+			// Snapshot currently visible tiles before revealing
+			var prevMask = {};
+			for(var pi = 0; pi <= World.RADIUS * 2; pi++) {
+				for(var pj = 0; pj <= World.RADIUS * 2; pj++) {
+					if(mask[pi][pj]) prevMask[pi + '_' + pj] = true;
+				}
+			}
 			do {
 				x = Math.floor(Math.random() * (World.RADIUS * 2 + 1));
 				y = Math.floor(Math.random() * (World.RADIUS * 2 + 1));
 			} while (mask[x][y]);
 			World.uncoverMap(x, y, 5, mask);
+			// Record newly revealed tiles for animation
+			World._revealedTiles = {};
+			for(var ri = 0; ri <= World.RADIUS * 2; ri++) {
+				for(var rj = 0; rj <= World.RADIUS * 2; rj++) {
+					if(mask[ri][rj] && !prevMask[ri + '_' + rj]) {
+						World._revealedTiles[ri + '_' + rj] = true;
+					}
+				}
+			}
+			// Clear animation tracking after 3 seconds
+			Engine.setTimeout(function() { World._revealedTiles = null; }, 3000);
 		}
 		World.testMap();
+		World.drawMap();
 	},
 
 	generateMap: function() {
@@ -853,7 +872,7 @@ var World = {
 		World.state.map[x][y] = World.state.map[x][y] + '!';
 	},
 
-\tdrawMap: function() {
+	drawMap: function() {
 		var map = $('#map');
 		if(map.length === 0) {
 			map = new $('<div>').attr('id', 'map').appendTo('#worldOuter');
@@ -885,23 +904,25 @@ var World = {
 				// Check if tile is reachable with current supplies
 				var dist = Math.abs(i - World.curPos[0]) + Math.abs(j - World.curPos[1]);
 				var reachable = dist > 0 && dist <= reachableBudget;
+				var revealClass = (World._revealedTiles && World._revealedTiles[i + '_' + j]) ? ' map-reveal' : '';
 				if(World.curPos[0] == i && World.curPos[1] == j) {
 					mapString += '<span class="landmark">@<div class="tooltip ' + ttClass + '">'+_('Wanderer')+'</div></span>';
 				} else if(World.state.mask[i][j]) {
 					var c = World.state.map[i][j];
-					var reachClass = reachable ? ' class="reachable"' : '';
+					var reachClass = reachable ? ' reachable' : '';
+					var spanClass = 'landmark' + reachClass + revealClass;
 					switch(c) {
 						case World.TILE.VILLAGE:
-							mapString += '<span class="landmark"' + reachClass + '>' + c + '<div class="tooltip' + ttClass + '">'+_('The&nbsp;Village')+'</div></span>';
+							mapString += '<span class="' + spanClass + '">' + c + '<div class="tooltip' + ttClass + '">'+_('The&nbsp;Village')+'</div></span>';
 							break;
 						default:
 							if(typeof World.LANDMARKS[c] != 'undefined' && (c != World.TILE.OUTPOST || !World.outpostUsed(i, j))) {
-								mapString += '<span class="landmark"' + reachClass + '>' + c + '<div class="tooltip' + ttClass + '">' + World.LANDMARKS[c].label + '</div></span>';
+								mapString += '<span class="' + spanClass + '">' + c + '<div class="tooltip' + ttClass + '">' + World.LANDMARKS[c].label + '</div></span>';
 							} else {
 								if(c.length > 1) {
 									c = c[0];
 								}
-								mapString += reachable ? '<span class="reachable">' + c + '</span>' : c;
+								mapString += reachable ? '<span class="reachable' + revealClass + '">' + c + '</span>' : (revealClass ? '<span class="' + revealClass.trim() + '">' + c + '</span>' : c);
 							}
 							break;
 					}

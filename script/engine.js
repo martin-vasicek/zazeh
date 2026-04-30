@@ -101,6 +101,11 @@
 				window.location = 'mobileWarning.html';
 			}
 
+			// Add mobile class to body for CSS targeting (even if not redirected)
+			if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+				$('body').addClass('mobile');
+			}
+
 			Engine.disableSelection();
 
 			if(this.options.state != null) {
